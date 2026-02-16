@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -88,13 +88,13 @@
             text-shadow: 0 0 10px var(--neon-blue);
         }
 
-        #overlay {
+        #overlay, #language-screen {
             position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.85);
+            background: rgba(0, 0, 0, 0.9);
             display: flex;
             flex-direction: column;
             z-index: 20;
@@ -102,6 +102,12 @@
             transition: opacity 0.3s;
             justify-content: center; 
             align-items: center;
+        }
+
+        /* Langue Screen Specifics */
+        #language-screen {
+            z-index: 30; /* Au dessus de tout */
+            background: #000; /* Fond totalement opaque pour le choix */
         }
 
         #overlay.game-over-layout {
@@ -139,6 +145,15 @@
             max-width: 250px;
         }
 
+        /* Grille pour les langues */
+        .lang-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 15px;
+            width: 100%;
+            max-width: 300px;
+        }
+
         button {
             padding: 15px 30px;
             font-size: 18px;
@@ -170,6 +185,16 @@
         button.secondary:active {
             background: white;
             opacity: 1;
+        }
+
+        /* Style spécifique boutons langues */
+        .lang-btn {
+            font-size: 16px;
+            border-color: var(--neon-purple);
+            box-shadow: 0 0 15px rgba(188, 19, 254, 0.2);
+        }
+        .lang-btn:active {
+            background: var(--neon-purple);
         }
 
         .hidden { display: none !important; opacity: 0; pointer-events: none; }
@@ -225,30 +250,39 @@
 <body>
 
 <div id="game-container">
+    
+    <!-- Écran de Choix de Langue -->
+    <div id="language-screen">
+        <h1 class="start-title" style="font-size: 24px; margin-bottom: 40px;">SELECT LANGUAGE</h1>
+        <div class="lang-grid">
+            <button class="lang-btn" onclick="selectLanguage('en')">English</button>
+            <button class="lang-btn" onclick="selectLanguage('fr')">Français</button>
+            <button class="lang-btn" onclick="selectLanguage('es')">Español</button>
+            <button class="lang-btn" onclick="selectLanguage('zh')">中文</button>
+            <button class="lang-btn" onclick="selectLanguage('ar')">العربية</button>
+        </div>
+    </div>
+
     <div id="ui">
         <div class="stat-box">
-            <div class="stat-label">Score</div>
+            <div class="stat-label" id="lbl-score">Score</div>
             <div id="score-val" class="stat-value">0</div>
         </div>
         <div class="stat-box">
-            <div class="stat-label">Meilleur</div>
+            <div class="stat-label" id="lbl-best">Meilleur</div>
             <div id="high-score-val" class="stat-value">0</div>
         </div>
     </div>
 
-    <!-- Indicateur de Milestone -->
     <div id="milestone-display">500</div>
 
     <canvas id="gameCanvas"></canvas>
 
-    <div id="overlay">
+    <div id="overlay" class="hidden"> <!-- Caché au début en attendant la langue -->
         <div id="start-content">
             <h1 class="start-title">NEON DASH</h1>
-            <div class="instructions">
-                <p>Esquivez le <strong style="color:var(--neon-pink)">Rose</strong></p>
-                <p>Attrapez les <strong style="color:var(--neon-purple)">Cristaux</strong></p>
-                <p>Attrapez le <strong style="color:#ffd700">Bouclier Jaune</strong> 🛡️</p>
-                <p style="margin-top:15px; font-size:12px; opacity:0.6">Glissez pour bouger</p>
+            <div class="instructions" id="instructions-text">
+                <!-- Texte injecté par JS -->
             </div>
         </div>
         
@@ -262,6 +296,97 @@
 </div>
 
 <script>
+    // --- Système de Traduction ---
+    const TRANSLATIONS = {
+        en: {
+            score: "SCORE",
+            best: "BEST",
+            instr1: "Dodge <strong style='color:var(--neon-pink)'>Pink</strong>",
+            instr2: "Collect <strong style='color:var(--neon-purple)'>Crystals</strong>",
+            instr3: "Grab <strong style='color:#ffd700'>Yellow Shield</strong> 🛡️",
+            instr4: "Slide to move",
+            start: "START",
+            replay: "REPLAY",
+            share: "SHARE 📸",
+            newRecord: "🏆 NEW RECORD!",
+            bestLabel: "BEST :",
+            scoreLabel: "FINAL SCORE",
+            shieldToast: "SHIELD ACTIVE! 🛡️",
+            copied: "Copied!",
+            shareMsg: "🚀 I scored [score] pts on Neon Dash! #NeonDash"
+        },
+        fr: {
+            score: "SCORE",
+            best: "MEILLEUR",
+            instr1: "Esquivez le <strong style='color:var(--neon-pink)'>Rose</strong>",
+            instr2: "Attrapez les <strong style='color:var(--neon-purple)'>Cristaux</strong>",
+            instr3: "Attrapez le <strong style='color:#ffd700'>Bouclier Jaune</strong> 🛡️",
+            instr4: "Glissez pour bouger",
+            start: "DÉMARRER",
+            replay: "REJOUER",
+            share: "PARTAGER 📸",
+            newRecord: "🏆 NOUVEAU RECORD !",
+            bestLabel: "MEILLEUR :",
+            scoreLabel: "SCORE FINAL",
+            shieldToast: "BOUCLIER ACTIVÉ ! 🛡️",
+            copied: "Copié !",
+            shareMsg: "🚀 J'ai fait un score de [score] pts sur Neon Dash ! #NeonDash"
+        },
+        es: {
+            score: "PUNTOS",
+            best: "RÉCORD",
+            instr1: "Esquiva el <strong style='color:var(--neon-pink)'>Rosa</strong>",
+            instr2: "Recoge <strong style='color:var(--neon-purple)'>Cristales</strong>",
+            instr3: "Toma el <strong style='color:#ffd700'>Escudo Amarillo</strong> 🛡️",
+            instr4: "Desliza para moverte",
+            start: "JUGAR",
+            replay: "REJUGAR",
+            share: "COMPARTIR 📸",
+            newRecord: "🏆 ¡NUEVO RÉCORD!",
+            bestLabel: "MEJOR :",
+            scoreLabel: "PUNTUACIÓN",
+            shieldToast: "¡ESCUDO ACTIVO! 🛡️",
+            copied: "¡Copiado!",
+            shareMsg: "🚀 ¡Hice [score] pts en Neon Dash! #NeonDash"
+        },
+        zh: {
+            score: "分数",
+            best: "最高分",
+            instr1: "躲避 <strong style='color:var(--neon-pink)'>粉色</strong>",
+            instr2: "收集 <strong style='color:var(--neon-purple)'>水晶</strong>",
+            instr3: "获取 <strong style='color:#ffd700'>黄色护盾</strong> 🛡️",
+            instr4: "滑动移动",
+            start: "开始游戏",
+            replay: "重玩",
+            share: "分享 📸",
+            newRecord: "🏆 新纪录！",
+            bestLabel: "最高 :",
+            scoreLabel: "最终得分",
+            shieldToast: "护盾已激活！🛡️",
+            copied: "已复制！",
+            shareMsg: "🚀 我在 Neon Dash 中得了 [score] 分！ #NeonDash"
+        },
+        ar: {
+            score: "النقاط",
+            best: "الأفضل",
+            instr1: "تجنب <strong style='color:var(--neon-pink)'>الوردي</strong>",
+            instr2: "اجمع <strong style='color:var(--neon-purple)'>الكريستال</strong>",
+            instr3: "خذ <strong style='color:#ffd700'>الدرع الأصفر</strong> 🛡️",
+            instr4: "اسحب للتحرك",
+            start: "ابدأ",
+            replay: "إعادة",
+            share: "مشاركة 📸",
+            newRecord: "🏆 رقم قياسي جديد!",
+            bestLabel: "الأفضل :",
+            scoreLabel: "النتيجة النهائية",
+            shieldToast: "الدرع نشط! 🛡️",
+            copied: "تم النسخ!",
+            shareMsg: "🚀 حققت [score] نقطة في نيون داش! #NeonDash"
+        }
+    };
+
+    let currentLang = 'en'; // Langue par défaut temporaire
+
     const AudioEngine = {
         ctx: null,
         init: function() {
@@ -324,11 +449,15 @@
     const scoreEl = document.getElementById('score-val');
     const highScoreEl = document.getElementById('high-score-val');
     const overlay = document.getElementById('overlay');
+    const languageScreen = document.getElementById('language-screen');
     const startBtn = document.getElementById('start-btn');
     const shareBtn = document.getElementById('share-btn');
     const startContent = document.getElementById('start-content');
     const toast = document.getElementById('toast');
     const milestoneDisplay = document.getElementById('milestone-display');
+    const instructionsText = document.getElementById('instructions-text');
+    const lblScore = document.getElementById('lbl-score');
+    const lblBest = document.getElementById('lbl-best');
 
     let width, height;
     let score = 0;
@@ -525,6 +654,47 @@
         }
     }
 
+    // --- LOGIQUE MULTILINGUE ---
+
+    window.selectLanguage = function(lang) {
+        currentLang = lang;
+        
+        // Gestion RTL pour l'arabe
+        if(lang === 'ar') {
+            document.body.dir = "rtl";
+            document.getElementById('game-container').style.fontFamily = "'Tahoma', 'Arial', sans-serif"; // Meilleure police pour arabe
+        } else {
+            document.body.dir = "ltr";
+            document.getElementById('game-container').style.fontFamily = "'Segoe UI', system-ui, sans-serif";
+        }
+
+        updateUIText();
+        
+        // Transition écrans
+        languageScreen.classList.add('hidden');
+        overlay.classList.remove('hidden');
+    };
+
+    function updateUIText() {
+        const t = TRANSLATIONS[currentLang];
+        
+        // UI HUD
+        lblScore.innerText = t.score;
+        lblBest.innerText = t.best;
+        
+        // Instructions
+        instructionsText.innerHTML = `
+            <p>${t.instr1}</p>
+            <p>${t.instr2}</p>
+            <p>${t.instr3}</p>
+            <p style="margin-top:15px; font-size:12px; opacity:0.6">${t.instr4}</p>
+        `;
+        
+        // Boutons
+        startBtn.innerText = t.start;
+        shareBtn.innerText = t.share;
+    }
+
     // --- MOTEUR DE JEU ---
 
     function resize() {
@@ -610,12 +780,12 @@
 
         shareBtn.addEventListener('click', async () => {
             const finalScore = Math.floor(score);
+            const t = TRANSLATIONS[currentLang];
             const shareData = {
                 title: 'Neon Dash',
-                text: `🚀 J'ai fait un score de ${finalScore} pts sur Neon Dash ! #NeonDash`,
+                text: t.shareMsg.replace('[score]', finalScore),
             };
 
-            // Horodatage
             const now = new Date();
             const timestamp = now.getFullYear() + "-" + 
                              (now.getMonth()+1).toString().padStart(2, '0') + "-" + 
@@ -635,7 +805,7 @@
                 }
             } catch (err) {
                 navigator.clipboard.writeText(shareData.text);
-                showToast("Copié !");
+                showToast(t.copied);
             }
         });
 
@@ -643,6 +813,8 @@
     }
 
     function handleGameOver() {
+        const t = TRANSLATIONS[currentLang];
+        
         if (player.hasShield) {
             player.hasShield = false;
             AudioEngine.playShield();
@@ -668,12 +840,12 @@
             localStorage.setItem('neonDashHighScore', highScore);
             highScoreEl.innerText = highScore;
             lastGameWasRecord = true;
-            showToast("NOUVEAU RECORD ! 🏆");
+            showToast(t.newRecord);
         } else {
             lastGameWasRecord = false;
         }
 
-        startBtn.innerText = "Rejouer";
+        startBtn.innerText = t.replay; // Bouton "REJOUER" traduit
         shareBtn.classList.remove('hidden');
         overlay.classList.remove('hidden');
         overlay.classList.add('game-over-layout');
@@ -684,6 +856,7 @@
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         const centerY = height * 0.35;
+        const t = TRANSLATIONS[currentLang];
 
         // TITRE DU JEU
         const gradient = ctx.createLinearGradient(width/2 - 150, centerY - 60, width/2 + 150, centerY - 60);
@@ -700,7 +873,7 @@
         ctx.font = 'bold 16px "Segoe UI", sans-serif';
         ctx.fillStyle = '#00f2ff';
         ctx.shadowBlur = 0;
-        ctx.fillText('SCORE FINAL', width / 2, centerY);
+        ctx.fillText(t.scoreLabel, width / 2, centerY);
 
         // VALEUR SCORE
         ctx.font = 'bold 80px "Segoe UI", sans-serif';
@@ -712,17 +885,16 @@
         // INDICATION DE RECORD
         if (lastGameWasRecord) {
             ctx.font = 'bold 22px "Segoe UI", sans-serif';
-            ctx.fillStyle = '#ffd700'; // Or
+            ctx.fillStyle = '#ffd700'; 
             ctx.shadowColor = '#ffd700';
             ctx.shadowBlur = 15;
-            ctx.fillText('🏆 NOUVEAU RECORD !', width / 2, centerY + 130);
+            ctx.fillText(t.newRecord, width / 2, centerY + 130);
         } else {
-            // Style mis à jour : Blanc + Lueur Bleue
             ctx.font = 'bold 18px "Segoe UI", sans-serif';
             ctx.fillStyle = '#ffffff'; 
-            ctx.shadowColor = '#00f2ff'; // Lueur néon bleu
+            ctx.shadowColor = '#00f2ff'; 
             ctx.shadowBlur = 10;
-            ctx.fillText(`MEILLEUR : ${highScore}`, width / 2, centerY + 130);
+            ctx.fillText(`${t.bestLabel} ${highScore}`, width / 2, centerY + 130);
         }
 
         ctx.restore();
@@ -803,7 +975,8 @@
                         powerups.splice(i, 1);
                         player.hasShield = true;
                         AudioEngine.playTone(300, 'triangle', 0.5, 0.1); 
-                        showToast("BOUCLIER ACTIVÉ ! 🛡️");
+                        const t = TRANSLATIONS[currentLang];
+                        showToast(t.shieldToast);
                         for(let j=0; j<10; j++) particles.push(new Particle(p.x, p.y, '#ffd700'));
                     }
                 }

@@ -7,6 +7,8 @@
     <style>
         :root {
             --neon-blue: #00f2ff;
+            --neon-pink: #ff007f;
+            --neon-purple: #bc13fe;
             --bg-dark: #0a0a0c;
         }
 
@@ -105,20 +107,20 @@
         #overlay.game-over-layout {
             justify-content: flex-end;
             padding-bottom: 80px;
-            background: rgba(0, 0, 0, 0.6);
+            background: rgba(0, 0, 0, 0.7);
         }
 
         h1.start-title {
             font-size: clamp(32px, 10vw, 56px);
             margin-bottom: 15px;
-            background: linear-gradient(45deg, var(--neon-blue), white);
+            background: linear-gradient(45deg, var(--neon-blue), var(--neon-pink));
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             text-transform: uppercase;
             letter-spacing: 3px;
             font-weight: 900;
             text-align: center;
-            text-shadow: 0 0 30px rgba(0, 242, 255, 0.3);
+            text-shadow: 0 0 30px rgba(0, 242, 255, 0.2);
         }
 
         .instructions {
@@ -197,7 +199,6 @@
             opacity: 1;
         }
 
-        /* Indicateur de Milestone (500, 1000...) */
         #milestone-display {
             position: absolute;
             top: 50%;
@@ -205,7 +206,7 @@
             transform: translate(-50%, -50%) scale(0.5);
             font-size: 120px;
             font-weight: 900;
-            color: rgba(255, 255, 255, 0.15); /* Très transparent pour ne pas gêner */
+            color: rgba(255, 255, 255, 0.15);
             pointer-events: none;
             opacity: 0;
             z-index: 5;
@@ -216,7 +217,7 @@
         }
         
         #milestone-display.pop {
-            transform: translate(-50%, -50%) scale(1.5); /* Zoom in agressif */
+            transform: translate(-50%, -50%) scale(1.5);
             opacity: 1;
         }
     </style>
@@ -244,8 +245,8 @@
         <div id="start-content">
             <h1 class="start-title">NEON DASH</h1>
             <div class="instructions">
-                <p>Esquivez le <strong style="color:#ff4444">Rouge</strong></p>
-                <p>Attrapez les <strong style="color:var(--neon-blue)">Cristaux</strong></p>
+                <p>Esquivez le <strong style="color:var(--neon-pink)">Rose</strong></p>
+                <p>Attrapez les <strong style="color:var(--neon-purple)">Cristaux</strong></p>
                 <p>Attrapez le <strong style="color:#ffd700">Bouclier Jaune</strong> 🛡️</p>
                 <p style="margin-top:15px; font-size:12px; opacity:0.6">Glissez pour bouger</p>
             </div>
@@ -293,7 +294,6 @@
         },
         playMilestone: function() {
             if (!this.ctx) return;
-            // Son de "battement de cœur" grave et impactant
             this.playTone(100, 'sine', 0.3, 0.5);
             setTimeout(() => this.playTone(80, 'triangle', 0.5, 0.3), 50);
         },
@@ -335,6 +335,7 @@
     let highScore = 0;
     let shakeIntensity = 0;
     let nextMilestone = 500;
+    let lastGameWasRecord = false;
     
     try {
         highScore = parseInt(localStorage.getItem('neonDashHighScore')) || 0;
@@ -349,7 +350,8 @@
     let crystals = [];
     let powerups = [];
 
-    const THEME_COLOR = '#00f2ff'; // Bleu Néon Constant
+    const THEME_COLOR = '#00f2ff';
+    const OBSTACLE_COLOR = '#ff007f';
 
     // --- CLASSES ---
 
@@ -372,7 +374,6 @@
             this.trail.forEach(t => { t.a -= 0.05; t.w *= 0.9; });
         }
         draw() {
-            // Trail
             this.trail.forEach((t, i) => {
                 ctx.beginPath();
                 ctx.arc(t.x, t.y, t.w, 0, Math.PI*2);
@@ -380,7 +381,6 @@
                 ctx.fill();
             });
 
-            // Shield
             if (this.hasShield) {
                 ctx.beginPath();
                 ctx.arc(this.x, this.y, this.radius + 8 + Math.sin(Date.now()/100)*3, 0, Math.PI*2);
@@ -392,7 +392,6 @@
                 ctx.shadowBlur = 0;
             }
 
-            // Body
             ctx.beginPath();
             ctx.arc(this.x, this.y, this.radius, 0, Math.PI*2);
             ctx.fillStyle = THEME_COLOR;
@@ -400,7 +399,6 @@
             ctx.fill();
             ctx.shadowBlur = 0;
 
-            // Core
             ctx.beginPath();
             ctx.arc(this.x, this.y, this.radius * 0.5, 0, Math.PI*2);
             ctx.fillStyle = 'white';
@@ -427,12 +425,12 @@
             ctx.translate(this.x + this.w/2, this.y + this.w/2);
             ctx.rotate(this.rot);
             
-            ctx.strokeStyle = '#ff4444';
+            ctx.strokeStyle = OBSTACLE_COLOR;
             ctx.lineWidth = 3;
-            ctx.shadowBlur = 10; ctx.shadowColor = '#ff0000';
+            ctx.shadowBlur = 10; ctx.shadowColor = OBSTACLE_COLOR;
             ctx.strokeRect(-this.w/2, -this.w/2, this.w, this.w);
             
-            ctx.fillStyle = 'rgba(255, 0, 0, 0.1)';
+            ctx.fillStyle = 'rgba(255, 0, 127, 0.15)';
             ctx.fillRect(-this.w/2, -this.w/2, this.w, this.w);
             
             ctx.restore();
@@ -466,7 +464,7 @@
             ctx.lineTo(-this.size, 0);
             ctx.closePath();
             
-            ctx.fillStyle = '#bc13fe'; // Violet pour contraste
+            ctx.fillStyle = '#bc13fe';
             ctx.shadowBlur = 15; ctx.shadowColor = '#bc13fe';
             ctx.fill();
             
@@ -486,7 +484,7 @@
         draw() {
             ctx.beginPath();
             ctx.arc(this.x, this.y, this.r, 0, Math.PI*2);
-            ctx.fillStyle = '#ffd700'; // Or
+            ctx.fillStyle = '#ffd700';
             ctx.shadowBlur = 20; ctx.shadowColor = '#ffd700';
             ctx.fill();
             ctx.shadowBlur = 0;
@@ -544,11 +542,11 @@
         milestoneDisplay.innerText = val;
         milestoneDisplay.classList.add('pop');
         AudioEngine.playMilestone();
-        triggerShake(10); // Petit tremblement
+        triggerShake(10);
         
         setTimeout(() => {
             milestoneDisplay.classList.remove('pop');
-        }, 1000); // Reste visible moins longtemps pour la pression
+        }, 1000);
     }
 
     function triggerShake(intensity = 15) {
@@ -593,6 +591,7 @@
             particles = [];
             isGameRunning = true;
             gameHasStartedOnce = true;
+            lastGameWasRecord = false;
             
             if(player) {
                 player.x = width / 2;
@@ -616,9 +615,18 @@
                 text: `🚀 J'ai fait un score de ${finalScore} pts sur Neon Dash ! #NeonDash`,
             };
 
+            // Horodatage
+            const now = new Date();
+            const timestamp = now.getFullYear() + "-" + 
+                             (now.getMonth()+1).toString().padStart(2, '0') + "-" + 
+                             now.getDate().toString().padStart(2, '0') + "_" + 
+                             now.getHours().toString().padStart(2, '0') + "-" + 
+                             now.getMinutes().toString().padStart(2, '0');
+            const filename = `neondash_${timestamp}.png`;
+
             try {
                 const blob = await new Promise(resolve => canvas.toBlob(resolve));
-                const file = new File([blob], 'neondash-score.png', { type: 'image/png' });
+                const file = new File([blob], filename, { type: 'image/png' });
                 
                 if (navigator.canShare && navigator.canShare({ files: [file] })) {
                     await navigator.share({ ...shareData, files: [file] });
@@ -651,14 +659,18 @@
         AudioEngine.playCrash();
         triggerShake();
         
-        for(let j=0; j<40; j++) particles.push(new Particle(player.x, player.y, THEME_COLOR));
-        for(let j=0; j<20; j++) particles.push(new Particle(player.x, player.y, '#ffffff'));
+        for(let j=0; j<20; j++) particles.push(new Particle(player.x, player.y, THEME_COLOR)); 
+        for(let j=0; j<20; j++) particles.push(new Particle(player.x, player.y, OBSTACLE_COLOR)); 
+        for(let j=0; j<10; j++) particles.push(new Particle(player.x, player.y, '#ffffff'));
         
         if(score > highScore) {
             highScore = Math.floor(score);
             localStorage.setItem('neonDashHighScore', highScore);
             highScoreEl.innerText = highScore;
+            lastGameWasRecord = true;
             showToast("NOUVEAU RECORD ! 🏆");
+        } else {
+            lastGameWasRecord = false;
         }
 
         startBtn.innerText = "Rejouer";
@@ -673,22 +685,45 @@
         ctx.textBaseline = 'middle';
         const centerY = height * 0.35;
 
+        // TITRE DU JEU
+        const gradient = ctx.createLinearGradient(width/2 - 150, centerY - 60, width/2 + 150, centerY - 60);
+        gradient.addColorStop(0, '#00f2ff'); // Neon Blue
+        gradient.addColorStop(1, '#ff007f'); // Neon Pink
+
         ctx.font = '900 48px "Segoe UI", sans-serif';
-        ctx.fillStyle = 'white';
-        ctx.shadowColor = THEME_COLOR;
+        ctx.fillStyle = gradient;
+        ctx.shadowColor = 'rgba(0, 242, 255, 0.3)';
         ctx.shadowBlur = 20;
-        ctx.fillText('GAME OVER', width / 2, centerY - 60);
+        ctx.fillText('NEON DASH', width / 2, centerY - 60);
         
-        ctx.font = 'bold 20px "Segoe UI", sans-serif';
-        ctx.fillStyle = THEME_COLOR;
+        // LABEL SCORE
+        ctx.font = 'bold 16px "Segoe UI", sans-serif';
+        ctx.fillStyle = '#00f2ff';
         ctx.shadowBlur = 0;
         ctx.fillText('SCORE FINAL', width / 2, centerY);
 
+        // VALEUR SCORE
         ctx.font = 'bold 80px "Segoe UI", sans-serif';
         ctx.fillStyle = '#ffffff';
-        ctx.shadowColor = THEME_COLOR;
-        ctx.shadowBlur = 40;
+        ctx.shadowColor = '#bc13fe';
+        ctx.shadowBlur = 30;
         ctx.fillText(Math.floor(score), width / 2, centerY + 60);
+
+        // INDICATION DE RECORD
+        if (lastGameWasRecord) {
+            ctx.font = 'bold 22px "Segoe UI", sans-serif';
+            ctx.fillStyle = '#ffd700'; // Or
+            ctx.shadowColor = '#ffd700';
+            ctx.shadowBlur = 15;
+            ctx.fillText('🏆 NOUVEAU RECORD !', width / 2, centerY + 130);
+        } else {
+            // Style mis à jour : Blanc + Lueur Bleue
+            ctx.font = 'bold 18px "Segoe UI", sans-serif';
+            ctx.fillStyle = '#ffffff'; 
+            ctx.shadowColor = '#00f2ff'; // Lueur néon bleu
+            ctx.shadowBlur = 10;
+            ctx.fillText(`MEILLEUR : ${highScore}`, width / 2, centerY + 130);
+        }
 
         ctx.restore();
     }
@@ -722,7 +757,6 @@
             difficulty += 0.00015;
             scoreEl.innerText = Math.floor(score);
             
-            // Gestion du pop-up 500 points
             if (score >= nextMilestone) {
                 triggerMilestone(nextMilestone);
                 nextMilestone += 500;
@@ -768,7 +802,6 @@
                     if(dist < player.radius + p.r) {
                         powerups.splice(i, 1);
                         player.hasShield = true;
-                        // Son "Power up" réutilisé
                         AudioEngine.playTone(300, 'triangle', 0.5, 0.1); 
                         showToast("BOUCLIER ACTIVÉ ! 🛡️");
                         for(let j=0; j<10; j++) particles.push(new Particle(p.x, p.y, '#ffd700'));
